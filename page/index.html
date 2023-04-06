@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<style>
+* {
+  box-sizing: border-box;
+  padding: 50px;
+  text-align: center;
+  font-size: 35px;
+}
+</style>
+
+<script type="text/javascript">
+
+let open_ai_response;
+
+async function getRecipe() {
+  
+  var url = "https://api.openai.com/v1/engines/text-davinci-002/completions";
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", url);
+
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.setRequestHeader("Authorization", "Bearer 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");
+
+  xhr.onreadystatechange = function () {
+     if (xhr.readyState === 4 && xhr.status === 200) {
+        //console.log(xhr.status);
+        console.log(xhr);
+        open_ai_response = JSON.parse(xhr.responseText);
+        console.log(open_ai_response);
+		document.getElementById('recipeText').innerHTML = open_ai_response.choices[0].text;
+     }};
+
+  var data = `{
+    "prompt": "Ge mig ett recept på ${document.getElementById('input').value}",
+    "temperature": 0.7,
+    "max_tokens": 256,
+    "top_p": 1,
+    "frequency_penalty": 0.75,
+    "presence_penalty": 0
+  }`;
+	
+  xhr.send(data);
+  
+}
+	
+	
+  async function getRecipePicture() {
+  
+    // Define the API endpoint and parameters
+	const apiEndpoint = "https://api.openai.com/v1/images/generations";
+	const prompt = "oljemålad " + document.getElementById('input').value + " på tavla";
+	const model = "image-alpha-001";
+	const numImages = 1;
+	const size = "512x512";
+	
+	// Define the AJAX request	
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", apiEndpoint);
+	xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Authorization", "Bearer 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");
+	
+	// Define the request payload
+		const payload = JSON.stringify({
+		model: model,
+		prompt: prompt,
+		num_images: numImages,
+		size: size
+		});
+
+	// Define the callback function to handle the response
+	xhr.onreadystatechange = function() {
+	if (xhr.readyState === 4 && xhr.status === 200) {
+		const response = JSON.parse(xhr.responseText);
+		const image = response.data[0].url;
+    // Do something with the image URL, such as display it on the page
+		console.log(image);
+		document.getElementById('recipePicture').src = image;
+		}
+		console.log(prompt);
+	};
+
+	// Send the AJAX request
+	xhr.send(payload);
+
+  }
+
+</script>
+
+<body style="background-color:rgb(200, 200, 200);">
+
+<h1>Ge mig ett recept på:</h1>
+<input type="text" id="input">
+<input type="button" value="Hämta" onClick="getRecipe(); getRecipePicture();">
+<img id="recipePicture" src="" alt="recipePicture" width="512" height="512">
+<p id="recipeText"></p>
+
+</body>
+</html>
