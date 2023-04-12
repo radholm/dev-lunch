@@ -3,8 +3,8 @@
 # TODO: remove packages after install?
 
 current_dir=$(pwd)
-export PATH="$HOME/.cargo/bin:$PATH"
 apk update
+apk add libgcc curl
 
 for file in $current_dir/src/*
 do
@@ -17,9 +17,13 @@ do
             ;;
         *.rs)
             echo -e "\nFound file $file\nInstalling rust toolchain\n"
-            apk add rust rustup
-            echo $PATH
-            rustup --version && rustup target add wasm32-unknown-unknown && rustc --target wasm32-unknown-unknown $file -o "${file%.*}.wasm"
+            # apk add rust rustup cargo
+            curl https://sh.rustup.rs -sSf | sh -s -- -y &> /dev/null
+            source ~/.cargo/env
+            rustup toolchain install nightly
+            rustup target add wasm32-unknown-unknown --toolchain nightly && rustc +nightly --target wasm32-unknown-unknown -O $file --crate-type=cdylib 
+            ls -al
+            ls -al src
             rm $file
             ;;
         *)

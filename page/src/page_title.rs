@@ -1,4 +1,4 @@
 #[no_mangle]
-pub fn hello() -> &'static str {
-    "Ge mig ett recept på:"
+pub extern "C" fn page_title(x: &str) -> &str {
+    return "Ge mig ett recept på:"
 }

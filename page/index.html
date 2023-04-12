@@ -102,6 +102,15 @@
     })();
 </script>
 
+<script type="module">
+    (async () => {
+        const response = await fetch('page_title.wasm');
+        const bytes = await response.arrayBuffer();
+        const {instance} = await WebAssembly.instantiate(bytes);
+        console.log(instance.exports.page_title());
+    })();
+</script>
+
 <body style="background-color:rgb(200, 200, 200);">
     <h1>Ge mig ett recept på:</h1>
     <input type="text" id="input">
