@@ -14,17 +14,47 @@
 
 <script type="text/javascript">
 
-let open_ai_response;
+		async function readOpenAIAPIKey() {
+			// Get the input element
+			var input = document.getElementById("fileInput");
 
-async function getRecipe() {
+			// Check if a file has been selected
+			if (input.files && input.files[0]) {
+				// Get the first file
+				var file = input.files[0];
+
+				// Create a FileReader object
+				var reader = new FileReader();
+
+				// Set the onload function for the reader
+				reader.onload = function (e) {
+					// Get the contents of the file
+					var apiKey= e.target.result;
+
+					// Display the contents in the output area
+					//document.getElementById("output").textContent = contents;
+					getRecipe(apiKey);
+					getRecipePicture(apiKey);
+				};
+
+				// Read the file
+				reader.readAsText(file);
+				
+			} else {
+			alert("Please choose a .txt file only containing your apiKey!");
+			}
+		}
+
+async function getRecipe(apiKey) {
   
+  let open_ai_response;
   var url = "https://api.openai.com/v1/engines/text-davinci-002/completions";
 
   var xhr = new XMLHttpRequest();
   xhr.open("POST", url);
 
   xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.setRequestHeader("Authorization", "Bearer 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");
+  xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
 
   xhr.onreadystatechange = function () {
      if (xhr.readyState === 4 && xhr.status === 200) {
@@ -49,11 +79,11 @@ async function getRecipe() {
 }
 	
 	
-  async function getRecipePicture() {
+  async function getRecipePicture(apiKey) {
   
     // Define the API endpoint and parameters
 	const apiEndpoint = "https://api.openai.com/v1/images/generations";
-	const prompt = "oljemålad " + document.getElementById('input').value + " på tavla";
+	const prompt = document.getElementById('input').value + " målning";
 	const model = "image-alpha-001";
 	const numImages = 1;
 	const size = "512x512";
@@ -62,7 +92,7 @@ async function getRecipe() {
 	var xhr = new XMLHttpRequest();
 	xhr.open("POST", apiEndpoint);
 	xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.setRequestHeader("Authorization", "Bearer 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");
+    xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
 	
 	// Define the request payload
 		const payload = JSON.stringify({
@@ -81,7 +111,7 @@ async function getRecipe() {
 		console.log(image);
 		document.getElementById('recipePicture').src = image;
 		}
-		console.log(prompt);
+		console.log("bild prompt: " + prompt);
 	};
 
 	// Send the AJAX request
@@ -95,7 +125,8 @@ async function getRecipe() {
 
 <h1>Ge mig ett recept på:</h1>
 <input type="text" id="input">
-<input type="button" value="Hämta" onClick="getRecipe(); getRecipePicture();">
+<input type="file" id="fileInput">
+<input type="button" value="Hämta" onClick="readOpenAIAPIKey();">
 <img id="recipePicture" src="" alt="recipePicture" width="512" height="512">
 <p id="recipeText"></p>
 
