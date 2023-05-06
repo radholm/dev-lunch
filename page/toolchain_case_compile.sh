@@ -5,6 +5,7 @@
 current_dir=$(pwd)
 apk update
 apk add libgcc curl
+apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/testing wabt
 
 for file in $current_dir/src/*
 do
@@ -17,7 +18,6 @@ do
             ;;
         *.rs)
             echo -e "\nFound file $file\nInstalling rust toolchain\n"
-            # apk add rust rustup cargo
             curl https://sh.rustup.rs -sSf | sh -s -- -y &> /dev/null
             source ~/.cargo/env
             rustup toolchain install nightly
