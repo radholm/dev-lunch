@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Calling C++ function with Emscripten</title>
+    <script src="outputtest2.js"></script>
+</head>
+<body>
+<button id="mybutton" onclick="callCppFunction()">Call C++ Function</button>
+<script>
+    function callCppFunction() {
+    // Call the exported C++ function from the generated JavaScript
+        document.getElementById("mybutton").addEventListener("click", () => {
+            alert("check console");
+            const result = Module.ccall(
+                "makeApiCall", // name of C function
+                null, // return type
+                null, // argument types
+                null // arguments
+            );
+            console.log(result);
+        });
+}
+</script>
+</body>
+</html>
