@@ -21,12 +21,16 @@ void onResponse(emscripten_fetch_t *fetch)
     else
     {
         printf("HTTP request failed with status code: %d\n", fetch->status);
+        // Call the response callback with an empty response
+        if (fetch->userData != nullptr)
+        {
+            ResponseCallback callback = reinterpret_cast<ResponseCallback>(fetch->userData);
+            callback("");
+        }
     }
 
     // Clean up the fetch object
     emscripten_fetch_close(fetch);
-
-    printf("test\n");
 }
 
 #ifdef __cplusplus
@@ -35,7 +39,8 @@ void onResponse(emscripten_fetch_t *fetch)
 #define EXTERN
 #endif
 
-EXTERN EMSCRIPTEN_KEEPALIVE void makeApiCall(ResponseCallback callback) {
+EXTERN EMSCRIPTEN_KEEPALIVE void makeApiCall(ResponseCallback callback)
+{
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
@@ -43,7 +48,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE void makeApiCall(ResponseCallback callback) {
     attr.userData = reinterpret_cast<void*>(callback);
 
     const char* url = "https://api.openai.com/v1/engines/davinci/completions";
-    const char* headers[] = {"Content-Type", "application/json", "Authorization", "Bearer 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", nullptr};
+    const char* headers[] = {"Content-Type", "application/json", "Authorization", "Bearer ", nullptr};
     attr.requestHeaders = headers;
 
     const char* data = R"({"prompt": "Hello!", "max_tokens": 256})";
