@@ -5,12 +5,21 @@
 current_dir=$(pwd)
 apk update
 apk add libgcc curl
+apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/testing libcurl
 apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/testing wabt
 
 for file in $current_dir/src/*
 do
     case $file in
         *.c)
+            echo -e "\nFound file $file\nInstalling clang toolchain\n"
+            apk add clang lld
+            # clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o "${file%.*}.wasm" $file
+            # clang -I /usr/include -L /usr/lib -l curl --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o "${file%.*}.wasm" $file 
+            clang -I /usr/include -L /usr/lib -l curl -o "${file%.*}" $file 
+            rm $file
+            ;;
+        *.cpp)
             echo -e "\nFound file $file\nInstalling clang toolchain\n"
             apk add clang lld
             clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o "${file%.*}.wasm" $file

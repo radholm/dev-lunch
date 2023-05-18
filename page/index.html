@@ -98,7 +98,7 @@
         const response = await fetch('src/add.wasm');
         const bytes = await response.arrayBuffer();
         const {instance} = await WebAssembly.instantiate(bytes);
-        console.log('The answer is: ' + instance.exports.add(1, 2));
+        console.log('add.c: ' + instance.exports.add(1, 2));
     })();
 </script>
 
@@ -107,7 +107,7 @@
         const response = await fetch('double_it.wasm');
         const bytes = await response.arrayBuffer();
         const {instance} = await WebAssembly.instantiate(bytes);
-        console.log(instance.exports.double_it(3));
+        console.log('double_it.rs: ' + instance.exports.double_it(3));
     })();
 </script>
 
