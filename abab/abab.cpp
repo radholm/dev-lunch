@@ -1,65 +1,81 @@
+#include <emscripten.h>
 #include <emscripten/fetch.h>
-#include <stdio.h>
 #include <string>
+#include <vector>
+#include <cstdio>
 #include <cstring>
-#include <emscripten/emscripten.h>
 
-typedef void (*ResponseCallback)(const char*);
-
-void onResponse(emscripten_fetch_t *fetch)
-{
-    if (fetch->status == 200)
-    {
-        std::string response(fetch->data, fetch->numBytes);
-        // Call the response callback with the received data
-        if (fetch->userData != nullptr)
-        {
-            ResponseCallback callback = reinterpret_cast<ResponseCallback>(fetch->userData);
-            callback(response.c_str());
-        }
-    }
-    else
-    {
-        printf("HTTP request failed with status code: %d\n", fetch->status);
-        // Call the response callback with an empty response
-        if (fetch->userData != nullptr)
-        {
-            ResponseCallback callback = reinterpret_cast<ResponseCallback>(fetch->userData);
-            callback("");
-        }
+// Callback function for handling the fetch response
+void fetchCallback(emscripten_fetch_t *fetch) {
+    if (fetch->status == 200) {
+        EM_ASM(
+            {
+                const responseArray = new Uint8Array(Module.HEAPU8.buffer, $0, $1);
+                const responseStr = new TextDecoder('utf-8').decode(responseArray);
+                Module['handleResponse'](responseStr);
+            },
+            fetch->data,
+            fetch->numBytes
+        );
+    } else {
+        EM_ASM(
+            {
+                console.log("Fetch request failed with status code: " + $0);
+            },
+            fetch->status
+        );
     }
 
-    // Clean up the fetch object
-    emscripten_fetch_close(fetch);
+    emscripten_fetch_close(fetch);  // Free the fetch data
 }
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-#else
-#define EXTERN
-#endif
+// Function to send a fetch request to the OpenAI API
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE void sendFetchRequest(const char* apiKey, const char* prompt) {
+        std::string apiUrl = "https://api.openai.com/v1/engines/davinci/completions";
+        std::string headers = "application/json";
+        std::string data = "{\"prompt\": \"" + std::string(prompt) + "\", \"max_tokens\": 128}";
 
-EXTERN EMSCRIPTEN_KEEPALIVE void makeApiCall(ResponseCallback callback)
-{
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess = onResponse;
-    attr.userData = reinterpret_cast<void*>(callback);
+        EM_ASM(
+            {
+                const apiKeyStr = UTF8ToString($0);
+                const promptStr = UTF8ToString($1);
+                const apiUrlStr = UTF8ToString($2);
+                const headersStr = UTF8ToString($3);
+                const dataStr = UTF8ToString($4);
 
-    const char* url = "https://api.openai.com/v1/engines/davinci/completions";
-    const char* headers[] = {"Content-Type", "application/json", "Authorization", "Bearer ", nullptr};
-    attr.requestHeaders = headers;
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", apiUrlStr);
+                xhr.setRequestHeader("Content-Type", headersStr);
+                xhr.setRequestHeader("Authorization", "Bearer " + apiKeyStr);
 
-    const char* data = R"({"prompt": "Hello!", "max_tokens": 256})";
-    attr.requestData = data;
-    attr.requestDataSize = strlen(data);
-    std::strcpy(attr.requestMethod, "POST");
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        Module['handleResponse'](xhr.responseText);
+                    } else {
+                        console.log("Fetch request failed with status code: " + xhr.status);
+                    }
+                };
 
-    emscripten_fetch(&attr, url);
+                xhr.onerror = function() {
+                    console.log("Fetch request failed");
+                };
+
+                xhr.send(dataStr);
+            },
+            apiKey,
+            prompt,
+            apiUrl.c_str(),
+            headers.c_str(),
+            data.c_str()
+        );
+    }
 }
 
-int main()
-{
-    return 0;
+// Function called from JavaScript to handle the response
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE void handleResponse(const char* response) {
+        // Print the response to the console
+        printf("Received response: %s\n", response);
+    }
 }

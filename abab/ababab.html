@@ -1,25 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Calling C++ function with Emscripten</title>
+    <title>Fetch Example</title>
     <script src="outputtest2.js"></script>
 </head>
 <body>
-<button id="mybutton" onclick="callCppFunction()">Call C++ Function</button>
-<script>
-    function callCppFunction() {
-    // Call the exported C++ function from the generated JavaScript
-        document.getElementById("mybutton").addEventListener("click", () => {
-            alert("check console");
-            const result = Module.ccall(
-                "makeApiCall", // name of C function
-                null, // return type
-                null, // argument types
-                null // arguments
-            );
-            console.log(result);
-        });
-}
-</script>
+    <h1>Fetch Example</h1>
+    <pre id="response"></pre>
+
+    <script>
+        // Create a typed array to store the response data
+        let responseData;
+
+        // Wait for the Emscripten module to be ready
+        Module.onRuntimeInitialized = function() {
+            // Replace 'YOUR_API_KEY' and 'YOUR_PROMPT' with your actual OpenAI API key and prompt
+            const apiKey = '';
+            const prompt = 'HELLO!';
+
+            // Function called from C++ to handle the response
+            Module['handleResponse'] = function(response) {
+                // Display the response in the HTML page
+                const responseElement = document.getElementById('response');
+                responseElement.textContent = JSON.parse(response).choices[0].text;
+            };
+
+            // Call the C++ function to send the fetch request
+            Module.ccall('sendFetchRequest', 'void', ['string', 'string'], [apiKey, prompt]);
+        };
+    </script>
 </body>
 </html>
